@@ -2,6 +2,8 @@ package gate
 
 import (
 	"log"
+	"s7/share/middleware/mnet"
+	cstring "s7/share/net/coder/string"
 	strings "strings"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
@@ -9,13 +11,8 @@ import (
 )
 
 func startServer(ctx actor.Context) {
-	server := tcp_server.New("0.0.0.0:0")
-	server.OnNewClient(func(c *tcp_server.Client) {
-	})
-	server.OnNewMessage(handleMessage)
-	server.OnClientConnectionClosed(func(c *tcp_server.Client, e error) {
-	})
-	go server.Listen()
+	cstring.NewReadWriter()
+	mnet.MakeAcceptor("0.0.0.0:0", 100, 0)
 }
 
 func handleMessage(c *tcp_server.Client, msg string) {
