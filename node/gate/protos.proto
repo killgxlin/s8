@@ -1,0 +1,7 @@
+syntax = "proto3";
+package gate;
+//import "github.com/AsynkronIT/protoactor-go/actor/protos.proto";
+
+message Kick {
+	string name = 1;
+}

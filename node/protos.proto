@@ -1,0 +1,6 @@
+syntax = "proto3";
+package node;
+
+message Command {
+	string cmd = 1;
+}

@@ -1,0 +1,35 @@
+// auth -----------------------------------------
+csAuth token
+scAuth err [userid]
+
+// user -----------------------------------------
+csUserLoad [userid]
+scUserLoad err data
+
+csUserCreate data [userid]
+scUserCreate err data
+
+// chan -----------------------------------------
+csListChan 
+scListChan chanids
+
+csChanEnter chanid
+scChanEnter chanid err type members
+
+csChanExit chanid
+scChanExit chanid err
+
+csChanEvent chanid event
+scChanEvent chanid enters exits members events err
+
+csChanCreate type params
+scChanCreate chanid
+
+csChanDelete chanid
+scChanDelete chanid err
+
+// model ----------------------------------------
+user
+channel
+monitor
+proxy
