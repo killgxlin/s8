@@ -2,5 +2,6 @@ syntax = "proto3";
 package node;
 
 message Command {
-	string cmd = 1;
+	uint64 userid = 1;
+	string cmd = 2;
 }

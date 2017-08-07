@@ -23,7 +23,7 @@ func (g *matchActor) Receive(ctx actor.Context) {
 
 		termPID.Request(&term.RegLocal{}, ctx.Self())
 	}
-	node.LogContext(ctx)
+	//node.LogContext(ctx)
 }
 
 func init() {

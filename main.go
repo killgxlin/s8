@@ -6,6 +6,8 @@ import (
 	"io"
 	"log"
 	"net"
+	"s7/share/middleware/msglogger"
+	"s7/share/profile"
 	"s8/node"
 	"strings"
 
@@ -27,6 +29,9 @@ var (
 )
 
 func main() {
+	profile.StartWebTrace()
+
+	msglogger.Enable(true)
 	flag.Parse()
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
@@ -66,7 +71,7 @@ func main() {
 		if e != nil || pid == nil {
 			log.Fatal(e, pid)
 		}
-		pid.Tell(&node.Command{l})
+		pid.Tell(&node.Command{Cmd: l})
 	}
 }
 

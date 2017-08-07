@@ -10,7 +10,7 @@ type roomActor struct {
 }
 
 func (g *roomActor) Receive(ctx actor.Context) {
-	node.LogContext(ctx)
+	//node.LogContext(ctx)
 }
 
 func init() {

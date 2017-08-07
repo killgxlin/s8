@@ -10,7 +10,7 @@ type termActor struct {
 }
 
 func (g *termActor) Receive(ctx actor.Context) {
-	node.LogContext(ctx)
+	//node.LogContext(ctx)
 }
 
 func init() {
