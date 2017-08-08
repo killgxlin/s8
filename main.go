@@ -16,9 +16,9 @@ import (
 	"github.com/AsynkronIT/protoactor-go/cluster"
 	"github.com/AsynkronIT/protoactor-go/cluster/consul"
 
+	_ "s8/node/chanlist"
+	_ "s8/node/channel"
 	_ "s8/node/gate"
-	_ "s8/node/match"
-	_ "s8/node/room"
 	_ "s8/node/term"
 	_ "s8/node/user"
 )

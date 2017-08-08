@@ -1,4 +1,4 @@
-package match
+package channel
 
 import (
 	"log"
@@ -9,10 +9,10 @@ import (
 	"github.com/AsynkronIT/protoactor-go/cluster"
 )
 
-type matchActor struct {
+type channelActor struct {
 }
 
-func (g *matchActor) Receive(ctx actor.Context) {
+func (g *channelActor) Receive(ctx actor.Context) {
 	switch ctx.Message().(type) {
 	case *actor.Started:
 		termPID, e := cluster.Get("term", "term")
@@ -27,7 +27,7 @@ func (g *matchActor) Receive(ctx actor.Context) {
 }
 
 func init() {
-	node.RegisterGlobal("match", actor.FromProducer(func() actor.Actor {
-		return &matchActor{}
+	node.RegisterGlobal("channel", actor.FromProducer(func() actor.Actor {
+		return &channelActor{}
 	}))
 }
