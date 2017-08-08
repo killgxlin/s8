@@ -47,6 +47,8 @@ func main() {
 	if e != nil {
 		log.Fatal(e)
 	}
+	defer p.Shutdown()
+
 	cluster.Start("s8", getLanAddr(*port), p)
 	node.StartLocals(types)
 

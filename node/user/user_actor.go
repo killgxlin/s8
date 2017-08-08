@@ -5,7 +5,6 @@ import (
 	"s7/share/middleware/msglogger"
 	"s8/node"
 	"s8/util"
-	"strconv"
 	"strings"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
@@ -19,20 +18,13 @@ type userActor struct {
 func (ua *userActor) Receive(ctx actor.Context) {
 	switch ev := ctx.Message().(type) {
 	case *actor.Started:
-		args := strings.Split("asdafsfd$user:1234", "user:")
-		var (
-			uintId uint64
-			e      error
-		)
-		if len(args) == 2 {
-			uintId, e = strconv.ParseUint(args[1], 10, 64)
-			if e != nil {
-				log.Panic(e)
-			}
+		var e error
+		ua.userid, e = util.GetIdFrom(ctx.Self().Id, "user:")
+		if e != nil {
+			log.Panic(e)
 		}
-
-		ua.userid = uintId
 	case *node.Command:
+		panic("panic")
 		cmdHandler.Handle(ev.Cmd, ctx)
 	}
 }
@@ -58,5 +50,10 @@ func init() {
 
 		ua.data = strings.Join(args, " ")
 		ctx1.Respond(&node.Command{Cmd: ua.data})
+	})
+	cmdHandler.Register("parent", func(args []string, ctx interface{}) {
+		ctx1 := ctx.(actor.Context)
+
+		ctx1.Respond(&node.Command{Cmd: ctx1.Parent().String()})
 	})
 }
