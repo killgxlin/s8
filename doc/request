@@ -33,3 +33,21 @@ user
 channel
 monitor
 proxy
+
+
+// -----------------------------------------------------
+csName name
+scName err
+
+csListChan
+scListChan chanids err
+
+csChanEnter chanid
+scChanEnter chanid members err
+
+csChanExit chanid
+scChanExit err
+
+csChanEvent chanid event
+scChanEvent chanid enters exits members events err
+

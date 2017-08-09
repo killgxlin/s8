@@ -29,6 +29,7 @@ var (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
 	profile.StartWebTrace()
 
 	msglogger.Enable(true)

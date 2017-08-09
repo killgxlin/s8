@@ -15,9 +15,7 @@ import (
 
 // actor --------------------------------------------------
 type connActor struct {
-	token   string
-	account string
-	userid  uint64
+	name string
 }
 
 func (c *connActor) Receive(ctx actor.Context) {
@@ -27,7 +25,7 @@ func (c *connActor) Receive(ctx actor.Context) {
 	case *mnet.ConnectionEvent:
 		ctx.Self().Stop()
 	case string:
-		cmdHandler.Handle(ev, ctx)
+		cmdHandler.Handle(ev, "", nil, ctx)
 	}
 }
 
@@ -37,118 +35,34 @@ var (
 )
 
 func init() {
-	cmdHandler.Register("eco", func(args []string, ctx interface{}) {
+	cmdHandler.Register("eco", func(args []string, name string, pid *actor.PID, ctx interface{}) {
 		mnet.SendMsg(ctx.(actor.Context), strings.Join(args, " "))
 	})
-	cmdHandler.Register("au", func(args []string, ctx interface{}) {
+	cmdHandler.Register("nam", func(args []string, name string, pid *actor.PID, ctx interface{}) {
 		ctx1 := ctx.(actor.Context)
 		ca := ctx1.Actor().(*connActor)
 
-		token := args[0]
-		log.Printf("token %v\n", token)
-		mnet.SendMsg(ctx1, fmt.Sprintf("au %v %v", "ok", 0))
+		name = args[0]
 
-		ca.token = args[0]
-		ca.account = ca.token
-		ca.userid = 1
-	})
-	cmdHandler.Register("upa", func(args []string, ctx interface{}) {
-		ctx1 := ctx.(actor.Context)
-		ca := ctx1.Actor().(*connActor)
-
-		userPID, e := cluster.Get(fmt.Sprintf("user:%v", ca.userid), "user")
+		userPID, e := cluster.Get("user:"+name, "user")
 		if e != nil {
 			log.Panic(e)
 		}
-
-		ud, e := userPID.RequestFuture(
-			&node.Command{Userid: ca.userid, Cmd: "parent"},
-			time.Second,
-		).Result()
-		if e != nil {
-			log.Panic(e)
-		}
-
-		err := "ok"
-		ret := ""
-
-		cmd, ok := ud.(*node.Command)
-		if !ok || cmd == nil {
-			err = "unknown"
-		} else if cmd.Cmd == "" {
-			err = "noexist"
-		} else {
-			ret = cmd.Cmd
-		}
-
-		mnet.SendMsg(ctx1, fmt.Sprintf("upa %v %v", err, ret))
-	})
-	cmdHandler.Register("ulo", func(args []string, ctx interface{}) {
-		ctx1 := ctx.(actor.Context)
-		ca := ctx1.Actor().(*connActor)
-
-		userPID, e := cluster.Get(fmt.Sprintf("user:%v", ca.userid), "user")
-		if e != nil {
-			log.Panic(e)
-		}
-
-		ud, e := userPID.RequestFuture(
-			&node.Command{Userid: ca.userid, Cmd: "load"},
-			time.Second,
-		).Result()
-		if e != nil {
-			log.Panic(e)
-		}
-
-		err := "ok"
-		ret := ""
-
-		cmd, ok := ud.(*node.Command)
-		if !ok || cmd == nil {
-			err = "unknown"
-		} else if cmd.Cmd == "" {
-			err = "noexist"
-		} else {
-			ret = cmd.Cmd
-		}
-
-		mnet.SendMsg(ctx1, fmt.Sprintf("ulo %v %v", err, ret))
-	})
-	cmdHandler.Register("ucr", func(args []string, ctx interface{}) {
-		ctx1 := ctx.(actor.Context)
-		ca := ctx1.Actor().(*connActor)
-
-		userPID, e := cluster.Get(fmt.Sprintf("user:%v", ca.userid), "user")
-		if e != nil {
-			log.Panic(e)
-		}
-
-		rep, e := userPID.RequestFuture(
+		ctx1.RequestFuture(
+			userPID,
 			&node.Command{
-				Userid: ca.userid,
-				Cmd:    strings.Join(append([]string{"create"}, args...), " "),
+				Data: "register",
+				Name: name,
+				Pid:  ctx1.Self(),
 			},
 			time.Second,
-		).Result()
-		if e != nil {
-			log.Panic(e)
-		}
+		)
 
-		err := "ok"
-		ret := ""
+		mnet.SendMsg(ctx1, fmt.Sprintf("nam %v %v", "ok", 0))
 
-		cmd, ok := rep.(*node.Command)
-		if !ok || cmd == nil {
-			err = "unknown"
-		} else if cmd.Cmd == "" {
-			err = "noexist"
-		} else {
-			ret = cmd.Cmd
-		}
-
-		mnet.SendMsg(ctx1, fmt.Sprintf("ucr %v %v", err, ret))
+		ca.name = name
 	})
-	cmdHandler.Register("cls", func(args []string, ctx interface{}) {
+	cmdHandler.Register("cls", func(args []string, name string, pid *actor.PID, ctx interface{}) {
 		ctx1 := ctx.(actor.Context)
 
 		listPID, e := cluster.Get("chanlist", "chanlist")
@@ -156,7 +70,11 @@ func init() {
 			log.Panic(e)
 		}
 
-		rep, e := listPID.RequestFuture(&node.Command{Cmd: "list"}, time.Second).Result()
+		rep, e := ctx1.RequestFuture(
+			listPID,
+			&node.Command{Data: "list"},
+			time.Second,
+		).Result()
 		if e != nil {
 			log.Panic(e)
 		}
@@ -168,20 +86,25 @@ func init() {
 		if !ok || cmd == nil {
 			err = "unknown"
 		} else {
-			ret = cmd.Cmd
+			ret = cmd.Data
 		}
 
 		mnet.SendMsg(ctx1, fmt.Sprintf("cls %v %v", err, ret))
 	})
-	cmdHandler.Register("ccr", func(args []string, ctx interface{}) {
+	cmdHandler.Register("cen", func(args []string, name string, pid *actor.PID, ctx interface{}) {
 		ctx1 := ctx.(actor.Context)
+		ca := ctx1.Actor().(*connActor)
 
-		listPID, e := cluster.Get("chanlist", "chanlist")
+		chanPID, e := cluster.Get("channel:"+args[0], "channel")
 		if e != nil {
 			log.Panic(e)
 		}
 
-		rep, e := listPID.RequestFuture(&node.Command{Cmd: "create"}, time.Second).Result()
+		rep, e := ctx1.RequestFuture(
+			chanPID,
+			&node.Command{Data: "enter " + ca.name},
+			time.Second,
+		).Result()
 		if e != nil {
 			log.Panic(e)
 		}
@@ -193,61 +116,53 @@ func init() {
 		if !ok || cmd == nil {
 			err = "unknown"
 		} else {
-			ret = cmd.Cmd
-		}
-
-		mnet.SendMsg(ctx1, fmt.Sprintf("ccr %v %v", err, ret))
-	})
-	cmdHandler.Register("cde", func(args []string, ctx interface{}) {
-		ctx1 := ctx.(actor.Context)
-
-		listPID, e := cluster.Get("chanlist", "chanlist")
-		if e != nil {
-			log.Panic(e)
-		}
-
-		rep, e := listPID.RequestFuture(&node.Command{Cmd: "delete " + args[0]}, time.Second).Result()
-		if e != nil {
-			log.Panic(e)
-		}
-
-		err := "ok"
-		ret := ""
-
-		cmd, ok := rep.(*node.Command)
-		if !ok || cmd == nil {
-			err = "unknown"
-		} else {
-			ret = cmd.Cmd
-		}
-
-		mnet.SendMsg(ctx1, fmt.Sprintf("cde %v %v", err, ret))
-	})
-	cmdHandler.Register("cen", func(args []string, ctx interface{}) {
-		ctx1 := ctx.(actor.Context)
-
-		chanPID, e := cluster.Get(args[0], "channel")
-		if e != nil {
-			log.Panic(e)
-		}
-
-		rep, e := chanPID.RequestFuture(&node.Command{Cmd: "enter"}, time.Second).Result()
-		if e != nil {
-			log.Panic(e)
-		}
-
-		err := "ok"
-		ret := ""
-
-		cmd, ok := rep.(*node.Command)
-		if !ok || cmd == nil {
-			err = "unknown"
-		} else {
-			ret = cmd.Cmd
+			ret = cmd.Data
 		}
 
 		mnet.SendMsg(ctx1, fmt.Sprintf("cen %v %v", err, ret))
 	})
-	cmdHandler.Register("cex", func(args []string, ctx interface{}) {
+	cmdHandler.Register("cex", func(args []string, name string, pid *actor.PID, ctx interface{}) {
+		ctx1 := ctx.(actor.Context)
+
+		chanPID, e := cluster.Get("channel:"+args[0], "channel")
+		if e != nil {
+			log.Panic(e)
+		}
+
+		rep, e := ctx1.RequestFuture(
+			chanPID,
+			&node.Command{Data: "exit"},
+			time.Second,
+		).Result()
+		if e != nil {
+			log.Panic(e)
+		}
+
+		err := "ok"
+		ret := ""
+
+		cmd, ok := rep.(*node.Command)
+		if !ok || cmd == nil {
+			err = "unknown"
+		} else {
+			ret = cmd.Data
+		}
+
+		mnet.SendMsg(ctx1, fmt.Sprintf("cex %v %v", err, ret))
+	})
+	cmdHandler.Register("cnt", func(args []string, name string, pid *actor.PID, ctx interface{}) {
+		ctx1 := ctx.(actor.Context)
+
+		chanPID, e := cluster.Get("channel:"+args[0], "channel")
+		if e != nil {
+			log.Panic(e)
+		}
+
+		ctx1.Request(chanPID, &node.Command{Data: "notify " + args[1]})
+	})
+	cmdHandler.Register("notify", func(args []string, name string, pid *actor.PID, ctx interface{}) {
+		ctx1 := ctx.(actor.Context)
+
+		mnet.SendMsg(ctx1, strings.Join(args, " "))
 	})
 }

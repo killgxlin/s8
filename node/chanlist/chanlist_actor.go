@@ -2,21 +2,17 @@ package chanlist
 
 import (
 	"bytes"
-	"fmt"
-	"log"
 	"s7/share/middleware/msglogger"
 	"s8/node"
 	"s8/util"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
-	"github.com/AsynkronIT/protoactor-go/cluster"
 )
 
 // actor -------------------------------------------------------
 type chanlistActor struct {
 	chans  map[string]*actor.PID // name pid
 	revMap map[string]string     // strPID name
-	curId  uint64
 }
 
 func (ca *chanlistActor) Receive(ctx actor.Context) {
@@ -63,41 +59,15 @@ func init() {
 		}
 		ctx1.Respond(&node.Command{Cmd: bw.String()})
 	})
-
-	cmdHandler.Register("create", func(args []string, ctx interface{}) {
+	cmdHandler.Register("register", func(args []string, ctx interface{}) {
 		ctx1 := ctx.(actor.Context)
 		ca := ctx1.Actor().(*chanlistActor)
 
-		ca.curId++
-		name := fmt.Sprintf("channel:%v", ca.curId)
-
-		chanPID, e := cluster.Get(name, "channel")
-		if e != nil {
-			log.Panic(e)
-		}
+		chanPID := ctx1.Sender()
+		name := args[0]
 
 		ctx1.Watch(chanPID)
 		ca.chans[name] = chanPID
 		ca.revMap[chanPID.String()] = name
-
-		ctx1.Respond(&node.Command{Cmd: name})
-	})
-	cmdHandler.Register("delete", func(args []string, ctx interface{}) {
-		ctx1 := ctx.(actor.Context)
-		ca := ctx1.Actor().(*chanlistActor)
-
-		name := args[0]
-		ret := "ok"
-
-		chanPID, ok := ca.chans[name]
-		if !ok {
-			ret = "noexist"
-		} else {
-			chanPID.StopFuture().Wait()
-			delete(ca.chans, name)
-			delete(ca.revMap, chanPID.String())
-		}
-
-		ctx1.Respond(&node.Command{Cmd: ret})
 	})
 }

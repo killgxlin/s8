@@ -20,3 +20,8 @@ func GetIdFrom(str, sep string) (uint64, error) {
 	}
 	return uintId, e
 }
+
+func GetStrIdFrom(str, sep string) (string, error) {
+	args := strings.Split(str, sep)
+	return args[1], nil
+}

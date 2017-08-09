@@ -2,10 +2,13 @@ package util
 
 import (
 	"log"
+	"runtime/debug"
 	"strings"
+
+	"github.com/AsynkronIT/protoactor-go/actor"
 )
 
-type Handler func(args []string, ctx interface{})
+type Handler func(args []string, name string, pid *actor.PID, ctx interface{})
 
 type CmdHandler struct {
 	handles map[string]Handler
@@ -18,17 +21,18 @@ func (ch *CmdHandler) Register(typ string, h Handler) {
 	ch.handles[typ] = h
 }
 
-func (ch *CmdHandler) Handle(cmd string, ctx interface{}) {
+func (ch *CmdHandler) Handle(data, name string, pid *actor.PID, ctx interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
+			debug.PrintStack()
 			log.Println(r)
 		}
 	}()
-	args := strings.Fields(cmd)
+	args := strings.Fields(data)
 	typ := args[0]
 	args = args[1:]
 	h := ch.handles[typ]
-	h(args, ctx)
+	h(args, name, pid, ctx)
 }
 
 func NewCmdHandler() *CmdHandler {
