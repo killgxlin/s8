@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	msgio   = cstring.NewReadWriter()
-	GatePID *actor.PID
+	msgio = cstring.NewReadWriter()
 )
 
 type gateActor struct {
@@ -30,7 +29,7 @@ func (g *gateActor) Receive(ctx actor.Context) {
 		if ev.C != nil {
 			prop := actor.FromInstance(&connActor{}).WithMiddleware(
 				msglogger.MsgLogger,
-				mnet.MakeConnection(ev.C, msgio, true, true),
+				mnet.MakeConnection(ev.C, msgio, true, true, 60*60*24),
 			)
 			ctx.SpawnPrefix(prop, "conn")
 		}
@@ -49,10 +48,8 @@ func StartGate(start, end int) {
 		msglogger.MsgLogger,
 		mnet.MakeAcceptor(addr, 100, 100),
 	)
-	pid, e := actor.SpawnNamed(prop, "gate")
+	_, e = actor.SpawnNamed(prop, "gate")
 	if e != nil {
 		log.Panic(e)
 	}
-
-	GatePID = pid
 }

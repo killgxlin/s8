@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"path"
-	"s9/grain/channel"
+	"s8/grain/channel"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/AsynkronIT/protoactor-go/cluster"
@@ -34,33 +34,48 @@ func (u *user) ListChannel(r *ListChannelRequest) (res *ListChannelResponse, e e
 
 func (u *user) EnterChannel(r *EnterChannelRequest) (res *EnterChannelResponse, e error) {
 	res = &EnterChannelResponse{}
-	g := channel.GetChannelGrain(r.Channel)
-	res1, e1 := g.Enter(&channel.EnterRequest{User: u.ID()})
-	if e1 != nil {
-		e = e1
-		return
+
+	for _, chnn := range r.Selector.Channel {
+		resChannel := &EnterChannelResponse_Channel{Channel: chnn}
+		res.Channels = append(res.Channels, resChannel)
+
+		g := channel.GetChannelGrain(chnn)
+		res1, e1 := g.Enter(&channel.EnterRequest{User: u.ID()})
+		if e1 != nil {
+			resChannel.Err = e.Error()
+		}
+		if res1 != nil {
+			resChannel.Members = res1.Members
+		}
+
+		if e1 == nil {
+			u.channels[chnn] = true
+		}
 	}
 
-	u.channels[r.Channel] = true
-	res.Members = res1.Members
 	return
 }
 
 func (u *user) QuitChannel(r *QuitChannelRequest) (res *Unit, e error) {
-	g := channel.GetChannelGrain(r.Channel)
-	_, e = g.Quit(&channel.QuitRequest{User: u.ID()})
-	if e == nil {
-		delete(u.channels, r.Channel)
+	for _, chnn := range r.Selector.Channel {
+		g := channel.GetChannelGrain(chnn)
+		_, e = g.Quit(&channel.QuitRequest{User: u.ID()})
+		if e == nil {
+			delete(u.channels, chnn)
+		}
 	}
 	return
 }
 
 func (u *user) FireChannelEvent(r *FireChannelEventRequest) (res *Unit, e error) {
-	g := channel.GetChannelGrain(r.Channel)
-	_, e = g.Publish(&channel.PublishRequest{User: u.ID(), Msg: r.Msg, ToUser: r.ToUser})
-	if e == nil {
-		delete(u.channels, r.Channel)
+	for _, chnn := range r.Selector.Channel {
+		g := channel.GetChannelGrain(chnn)
+		_, e = g.Publish(&channel.PublishRequest{User: u.ID(), Msg: r.Msg, ToUser: r.ToUser})
+		if e != nil {
+			delete(u.channels, chnn)
+		}
 	}
+
 	return
 }
 

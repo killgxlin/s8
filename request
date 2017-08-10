@@ -1,45 +1,32 @@
-// -----------------------------------------------------
-conn:
-	csName name
-	scName err
+// name
+cname NAME
+sname NAME ERR
 
-chanlist:
-	csGlobalChanList
-	scGlobalChanList chanids err
+// user list channel
+culch [PATTERN]
+sulch CHANNEL,CHANNEL,CHANNEL ERR
 
-channel:
-	csChanEnter chanid
-	scChanEnter chanid members err
+// registry list channel
+cglch [PATTERN]
+sglch CHANNEL,CHANNEL,CHANNEL ERR
 
-	csChanExit chanid
-	scChanExit err
+// channel enter
+cchen CHANNEL
+schen CHANNEL MEMBER,MEMBER,MEMBER ERR
 
-	csChanEvent chanid event
+// channel quit
+cchqu CHANNEL
+schqu CHANNEL ERR
 
-user:
-	scChanEvent chanid enters exits members events err
+// channel event
+schevtntf CHANNEL (+MEMBER|-MEMBER)
 
-	csMyChanList
-	scMyChanList chanids err
+// channel msg
+cchmsg CHANNEL CONTENT [TONAME]
+schmsg CHANNEL ERR
 
-// -----------------------------------------------------
-conn
-user
-chanlist
-channel
+schmsgntf CHANNEL FROMUSER: [*]CONTENT 
 
-// -----------------------------------------------------
-Grain
-	Conn
-		
-	User
-		ListChan(pattern string)([]string,error)
-		EnterChan
-		ExitChan
-		OnMessage
-	Channel
-		Add
-		Remove
-	Registry
-		Register
-		Unregister
+// channel list member
+cchlm CHANNEL 
+schlm CHANNEL [(MEMBER,)*MEMBER] ERR

@@ -1,22 +1,26 @@
-
 package channel
 
+import (
+	errors "errors"
+	log "log"
+	"s7/share/middleware/msglogger"
 
-import errors "errors"
-import log "log"
-import actor "github.com/AsynkronIT/protoactor-go/actor"
-import remote "github.com/AsynkronIT/protoactor-go/remote"
-import cluster "github.com/AsynkronIT/protoactor-go/cluster"
+	actor "github.com/AsynkronIT/protoactor-go/actor"
+	remote "github.com/AsynkronIT/protoactor-go/remote"
 
-import proto "github.com/gogo/protobuf/proto"
-import fmt "fmt"
-import math "math"
+	cluster "github.com/AsynkronIT/protoactor-go/cluster"
+
+	proto "github.com/gogo/protobuf/proto"
+
+	fmt "fmt"
+
+	math "math"
+)
 
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-	
 var xChannelFactory func() Channel
 
 func ChannelFactory(factory func() Channel) {
@@ -29,50 +33,48 @@ func GetChannelGrain(id string) *ChannelGrain {
 
 type Channel interface {
 	Init(id string)
-		
+
 	Enter(*EnterRequest) (*EnterResponse, error)
-		
+
 	Quit(*QuitRequest) (*Unit, error)
-		
+
 	Publish(*PublishRequest) (*Unit, error)
-		
 }
 type ChannelGrain struct {
 	ID string
 }
 
-	
 func (g *ChannelGrain) Enter(r *EnterRequest, options ...cluster.GrainCallOption) (*EnterResponse, error) {
 	conf := cluster.ApplyGrainCallOptions(options)
 	fun := func() (*EnterResponse, error) {
-			pid, err := cluster.Get(g.ID, "Channel")
-			if err != nil {
-				return nil, err
-			}
-			bytes, err := proto.Marshal(r)
-			if err != nil {
-				return nil, err
-			}
-			request := &cluster.GrainRequest{Method: "Enter", MessageData: bytes}
-			response, err := pid.RequestFuture(request, conf.Timeout).Result()
-			if err != nil {
-				return nil, err
-			}
-			switch msg := response.(type) {
-			case *cluster.GrainResponse:
-				result := &EnterResponse{}
-				err = proto.Unmarshal(msg.MessageData, result)
-				if err != nil {
-					return nil, err
-				}
-				return result, nil
-			case *cluster.GrainErrorResponse:
-				return nil, errors.New(msg.Err)
-			default:
-				return nil, errors.New("Unknown response")
-			}
+		pid, err := cluster.Get(g.ID, "Channel")
+		if err != nil {
+			return nil, err
 		}
-	
+		bytes, err := proto.Marshal(r)
+		if err != nil {
+			return nil, err
+		}
+		request := &cluster.GrainRequest{Method: "Enter", MessageData: bytes}
+		response, err := pid.RequestFuture(request, conf.Timeout).Result()
+		if err != nil {
+			return nil, err
+		}
+		switch msg := response.(type) {
+		case *cluster.GrainResponse:
+			result := &EnterResponse{}
+			err = proto.Unmarshal(msg.MessageData, result)
+			if err != nil {
+				return nil, err
+			}
+			return result, nil
+		case *cluster.GrainErrorResponse:
+			return nil, errors.New(msg.Err)
+		default:
+			return nil, errors.New("Unknown response")
+		}
+	}
+
 	var res *EnterResponse
 	var err error
 	for i := 0; i < conf.RetryCount; i++ {
@@ -99,38 +101,38 @@ func (g *ChannelGrain) EnterChan(r *EnterRequest, options ...cluster.GrainCallOp
 	}()
 	return c, e
 }
-	
+
 func (g *ChannelGrain) Quit(r *QuitRequest, options ...cluster.GrainCallOption) (*Unit, error) {
 	conf := cluster.ApplyGrainCallOptions(options)
 	fun := func() (*Unit, error) {
-			pid, err := cluster.Get(g.ID, "Channel")
-			if err != nil {
-				return nil, err
-			}
-			bytes, err := proto.Marshal(r)
-			if err != nil {
-				return nil, err
-			}
-			request := &cluster.GrainRequest{Method: "Quit", MessageData: bytes}
-			response, err := pid.RequestFuture(request, conf.Timeout).Result()
-			if err != nil {
-				return nil, err
-			}
-			switch msg := response.(type) {
-			case *cluster.GrainResponse:
-				result := &Unit{}
-				err = proto.Unmarshal(msg.MessageData, result)
-				if err != nil {
-					return nil, err
-				}
-				return result, nil
-			case *cluster.GrainErrorResponse:
-				return nil, errors.New(msg.Err)
-			default:
-				return nil, errors.New("Unknown response")
-			}
+		pid, err := cluster.Get(g.ID, "Channel")
+		if err != nil {
+			return nil, err
 		}
-	
+		bytes, err := proto.Marshal(r)
+		if err != nil {
+			return nil, err
+		}
+		request := &cluster.GrainRequest{Method: "Quit", MessageData: bytes}
+		response, err := pid.RequestFuture(request, conf.Timeout).Result()
+		if err != nil {
+			return nil, err
+		}
+		switch msg := response.(type) {
+		case *cluster.GrainResponse:
+			result := &Unit{}
+			err = proto.Unmarshal(msg.MessageData, result)
+			if err != nil {
+				return nil, err
+			}
+			return result, nil
+		case *cluster.GrainErrorResponse:
+			return nil, errors.New(msg.Err)
+		default:
+			return nil, errors.New("Unknown response")
+		}
+	}
+
 	var res *Unit
 	var err error
 	for i := 0; i < conf.RetryCount; i++ {
@@ -157,38 +159,38 @@ func (g *ChannelGrain) QuitChan(r *QuitRequest, options ...cluster.GrainCallOpti
 	}()
 	return c, e
 }
-	
+
 func (g *ChannelGrain) Publish(r *PublishRequest, options ...cluster.GrainCallOption) (*Unit, error) {
 	conf := cluster.ApplyGrainCallOptions(options)
 	fun := func() (*Unit, error) {
-			pid, err := cluster.Get(g.ID, "Channel")
-			if err != nil {
-				return nil, err
-			}
-			bytes, err := proto.Marshal(r)
-			if err != nil {
-				return nil, err
-			}
-			request := &cluster.GrainRequest{Method: "Publish", MessageData: bytes}
-			response, err := pid.RequestFuture(request, conf.Timeout).Result()
-			if err != nil {
-				return nil, err
-			}
-			switch msg := response.(type) {
-			case *cluster.GrainResponse:
-				result := &Unit{}
-				err = proto.Unmarshal(msg.MessageData, result)
-				if err != nil {
-					return nil, err
-				}
-				return result, nil
-			case *cluster.GrainErrorResponse:
-				return nil, errors.New(msg.Err)
-			default:
-				return nil, errors.New("Unknown response")
-			}
+		pid, err := cluster.Get(g.ID, "Channel")
+		if err != nil {
+			return nil, err
 		}
-	
+		bytes, err := proto.Marshal(r)
+		if err != nil {
+			return nil, err
+		}
+		request := &cluster.GrainRequest{Method: "Publish", MessageData: bytes}
+		response, err := pid.RequestFuture(request, conf.Timeout).Result()
+		if err != nil {
+			return nil, err
+		}
+		switch msg := response.(type) {
+		case *cluster.GrainResponse:
+			result := &Unit{}
+			err = proto.Unmarshal(msg.MessageData, result)
+			if err != nil {
+				return nil, err
+			}
+			return result, nil
+		case *cluster.GrainErrorResponse:
+			return nil, errors.New(msg.Err)
+		default:
+			return nil, errors.New("Unknown response")
+		}
+	}
+
 	var res *Unit
 	var err error
 	for i := 0; i < conf.RetryCount; i++ {
@@ -215,7 +217,6 @@ func (g *ChannelGrain) PublishChan(r *PublishRequest, options ...cluster.GrainCa
 	}()
 	return c, e
 }
-	
 
 type ChannelActor struct {
 	inner Channel
@@ -229,7 +230,7 @@ func (a *ChannelActor) Receive(ctx actor.Context) {
 		a.inner.Init(id[7:len(id)]) //skip "remote$"
 	case *cluster.GrainRequest:
 		switch msg.Method {
-			
+
 		case "Enter":
 			req := &EnterRequest{}
 			err := proto.Unmarshal(msg.MessageData, req)
@@ -248,7 +249,7 @@ func (a *ChannelActor) Receive(ctx actor.Context) {
 				resp := &cluster.GrainErrorResponse{Err: err.Error()}
 				ctx.Respond(resp)
 			}
-			
+
 		case "Quit":
 			req := &QuitRequest{}
 			err := proto.Unmarshal(msg.MessageData, req)
@@ -267,7 +268,7 @@ func (a *ChannelActor) Receive(ctx actor.Context) {
 				resp := &cluster.GrainErrorResponse{Err: err.Error()}
 				ctx.Respond(resp)
 			}
-			
+
 		case "Publish":
 			req := &PublishRequest{}
 			err := proto.Unmarshal(msg.MessageData, req)
@@ -286,25 +287,20 @@ func (a *ChannelActor) Receive(ctx actor.Context) {
 				resp := &cluster.GrainErrorResponse{Err: err.Error()}
 				ctx.Respond(resp)
 			}
-		
+
 		}
 	default:
 		log.Printf("Unknown message %v", msg)
 	}
 }
 
-	
-
-
 func init() {
-	
+
 	remote.Register("Channel", actor.FromProducer(func() actor.Actor {
-		return &ChannelActor {}
-		})		)
-		
+		return &ChannelActor{}
+	}).WithMiddleware(msglogger.MsgLogger))
+
 }
-
-
 
 // type channel struct {
 //	cluster.Grain
@@ -322,16 +318,9 @@ func init() {
 // 	return &Unit{}, nil
 // }
 
-
-
 // func init() {
 // 	//apply DI and setup logic
 
 // 	ChannelFactory(func() Channel { return &channel{} })
 
 // }
-
-
-
-
-

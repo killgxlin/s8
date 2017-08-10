@@ -1,14 +1,16 @@
 package util
 
 import (
+	"bytes"
+	"flag"
+	"fmt"
+	"io"
 	"log"
-	"runtime/debug"
-	"strings"
 
-	"github.com/AsynkronIT/protoactor-go/actor"
+	gsw "github.com/mattn/go-shellwords"
 )
 
-type Handler func(args []string, name string, pid *actor.PID, ctx interface{})
+type Handler func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{})
 
 type CmdHandler struct {
 	handles map[string]Handler
@@ -21,18 +23,35 @@ func (ch *CmdHandler) Register(typ string, h Handler) {
 	ch.handles[typ] = h
 }
 
-func (ch *CmdHandler) Handle(data, name string, pid *actor.PID, ctx interface{}) {
+func (ch *CmdHandler) Handle(cmd string, ctx interface{}) (ret string, e error) {
 	defer func() {
 		if r := recover(); r != nil {
-			debug.PrintStack()
-			log.Println(r)
+			e = fmt.Errorf("%v", r)
 		}
 	}()
-	args := strings.Fields(data)
-	typ := args[0]
-	args = args[1:]
-	h := ch.handles[typ]
-	h(args, name, pid, ctx)
+	args, e := gsw.Parse(cmd)
+	if e != nil {
+		return "", e
+	}
+
+	h, ok := ch.handles[args[0]]
+	if !ok {
+		return "", fmt.Errorf("handler of %v no exist", args[0])
+	}
+
+	b := &bytes.Buffer{}
+	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)
+	fs.SetOutput(b)
+
+	h(args[1:], fs, b, ctx)
+
+	if b.Len() > 0 {
+		b.Truncate(b.Len() - 1)
+	}
+	ret = b.String()
+	e = nil
+
+	return
 }
 
 func NewCmdHandler() *CmdHandler {

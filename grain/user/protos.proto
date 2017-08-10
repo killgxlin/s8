@@ -9,6 +9,11 @@ enum Ret {
 message Unit {
 }
 
+message ChannelSelector {
+	repeated string channel = 1;
+	string pattern = 2;
+}
+
 message ListChannelRequest {
 	string pattern = 1;
 }
@@ -18,19 +23,24 @@ message ListChannelResponse {
 }
 
 message EnterChannelRequest {
-	string channel = 1;
+	ChannelSelector selector = 1;
 }
 
 message EnterChannelResponse {
-	repeated string members = 1;
+	message Channel {
+		string channel = 1;
+		repeated string members = 2;
+		string err = 3;
+	}
+	repeated Channel channels = 1;
 }
 
 message QuitChannelRequest {
-	string channel = 1;
+	ChannelSelector selector = 1;
 }
 
 message FireChannelEventRequest {
-	string channel = 1;
+	ChannelSelector selector = 1;
 	string msg = 2;
 	string to_user = 3;
 }

@@ -1,1 +1,4 @@
 s8
+log
+*.swp
+tmp/*
