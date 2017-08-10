@@ -1,7 +1,0 @@
-syntax = "proto3";
-package term;
-import "github.com/AsynkronIT/protoactor-go/actor/protos.proto";
-
-message RegLocal {
-	actor.PID pid = 1;
-}

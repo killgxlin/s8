@@ -2,98 +2,42 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"io"
 	"log"
-	"net"
-	"s7/share/middleware/msglogger"
-	"s7/share/profile"
-	"s8/node"
-	"strings"
+	"s7/share/net"
+	"s8/gate"
+	"time"
 
 	console "github.com/AsynkronIT/goconsole"
-	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/AsynkronIT/protoactor-go/cluster"
 	"github.com/AsynkronIT/protoactor-go/cluster/consul"
+)
 
-	_ "s8/node/chanlist"
-	_ "s8/node/channel"
-	_ "s8/node/gate"
-	_ "s8/node/term"
-	_ "s8/node/user"
+const (
+	timeout = 1 * time.Second
 )
 
 var (
-	port   = flag.Int("port", 2000, "port to listen")
-	launch = flag.String("launch", "", "serivice to launch")
+	cport = flag.Int("cport", 8000, "cluster port")
+	gport = flag.Int("gport", 9000, "gate port")
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
-	profile.StartWebTrace()
-
-	msglogger.Enable(true)
 	flag.Parse()
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	types := strings.Split(*launch, ",")
-	if len(types) == 0 || len(types) == 1 && types[0] == "" {
-		types = node.AllLocalNames()
-		types = append(types, node.AllGlobalNames()...)
+	cp, err := consul.New()
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer cp.Shutdown()
 
-	node.RegToCluster(types)
-
-	p, e := consul.New()
+	addr, e := net.FindLanAddr(*cport, *cport+1000)
 	if e != nil {
-		log.Fatal(e)
+		log.Panic(e)
 	}
-	defer p.Shutdown()
 
-	cluster.Start("s8", getLanAddr(*port), p)
-	node.StartLocals(types)
+	cluster.Start("mycluster", addr, cp)
+	gate.StartGate(*gport, *gport+1000)
 
-	for {
-		l, e := console.ReadLine()
-		if e == io.EOF {
-			break
-		}
-		if l == "" {
-			continue
-		}
-
-		parts := strings.Split(l, ":")
-		if len(parts) == 0 {
-			continue
-		}
-
-		pid, e := cluster.Get(l, parts[0])
-		if e == actor.ErrTimeout {
-			continue
-		}
-		if e != nil || pid == nil {
-			log.Fatal(e, pid)
-		}
-		pid.Tell(&node.Command{Cmd: l})
-	}
+	console.ReadLine()
 }
-
-func getLanAddr(port int) string {
-	as, e := net.InterfaceAddrs()
-	if e != nil {
-		log.Fatal(e)
-	}
-	for _, a := range as {
-		ta := a.(*net.IPNet)
-		if ta == nil || len(ta.IP.To4()) != net.IPv4len || ta.IP.IsLoopback() {
-			continue
-		}
-		return fmt.Sprintf("%v:%v", ta.IP.String(), port)
-	}
-	return fmt.Sprintf("%v:%v", "0000", port)
-}
-
-/*
-cluster:user,room,term,match
-local:gate
-*/

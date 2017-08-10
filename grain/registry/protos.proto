@@ -1,0 +1,28 @@
+syntax = "proto3";
+package registry;
+
+message Unit {
+}
+
+message ListRequest {
+	string pattern = 1;
+}
+
+message ListResponse {
+	repeated string channel = 1;
+}
+
+message RegisterRequest {
+	string channel = 1;
+}
+
+message UnregisterRequest {
+	string channel = 1;
+}
+
+service Registry {
+	rpc List(ListRequest) returns (ListResponse) {}
+	rpc Register(RegisterRequest) returns (Unit) {}
+	rpc Unregister(UnregisterRequest) returns (Unit) {}
+}
+

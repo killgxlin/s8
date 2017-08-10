@@ -1,0 +1,65 @@
+syntax = "proto3";
+import "github.com/AsynkronIT/protoactor-go/actor/protos.proto";
+package user;
+
+enum Ret {
+	Ok = 0;
+}
+
+message Unit {
+}
+
+message ListChannelRequest {
+	string pattern = 1;
+}
+
+message ListChannelResponse {
+	repeated string channel = 1;
+}
+
+message EnterChannelRequest {
+	string channel = 1;
+}
+
+message EnterChannelResponse {
+	repeated string members = 1;
+}
+
+message QuitChannelRequest {
+	string channel = 1;
+}
+
+message FireChannelEventRequest {
+	string channel = 1;
+	string msg = 2;
+	string to_user = 3;
+}
+
+message ChannelEventNotify {
+	string channel = 1;
+	string user = 2;
+	string msg = 3;
+
+	string enter = 4;
+	string quit = 5;
+}
+
+message RegisterRequest {
+	actor.PID pid = 1;
+}
+
+
+message UnregisterRequest {
+	actor.PID pid = 1;
+}
+
+service User {
+	rpc ListChannel(ListChannelRequest) returns (ListChannelResponse) {}
+	rpc EnterChannel(EnterChannelRequest) returns (EnterChannelResponse) {}
+	rpc QuitChannel(QuitChannelRequest) returns (Unit) {}
+	rpc FireChannelEvent(FireChannelEventRequest) returns (Unit) {}
+	rpc NotifyChannelEvent(ChannelEventNotify) returns (Unit) {}
+	rpc Register(RegisterRequest)returns(Unit){}
+	rpc Unregister(UnregisterRequest)returns(Unit){}
+}
+

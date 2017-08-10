@@ -1,9 +1,0 @@
-syntax = "proto3";
-import "github.com/AsynkronIT/protoactor-go/actor/protos.proto";
-package node;
-
-message Command {
-	string data = 1;
-	string name = 2;
-	actor.PID pid = 3;
-}

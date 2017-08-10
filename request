@@ -1,0 +1,45 @@
+// -----------------------------------------------------
+conn:
+	csName name
+	scName err
+
+chanlist:
+	csGlobalChanList
+	scGlobalChanList chanids err
+
+channel:
+	csChanEnter chanid
+	scChanEnter chanid members err
+
+	csChanExit chanid
+	scChanExit err
+
+	csChanEvent chanid event
+
+user:
+	scChanEvent chanid enters exits members events err
+
+	csMyChanList
+	scMyChanList chanids err
+
+// -----------------------------------------------------
+conn
+user
+chanlist
+channel
+
+// -----------------------------------------------------
+Grain
+	Conn
+		
+	User
+		ListChan(pattern string)([]string,error)
+		EnterChan
+		ExitChan
+		OnMessage
+	Channel
+		Add
+		Remove
+	Registry
+		Register
+		Unregister

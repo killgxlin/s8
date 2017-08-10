@@ -1,0 +1,31 @@
+syntax = "proto3";
+package channel;
+
+message Unit {
+}
+
+message EnterRequest {
+	string user = 1;
+}
+
+message EnterResponse {
+	repeated string members = 1;
+}
+
+message QuitRequest {
+	string user = 1;
+}
+
+message PublishRequest {
+	string user = 1;
+	string msg = 2;
+	string to_user = 3;
+}
+
+
+service Channel {
+	rpc Enter(EnterRequest) returns (EnterResponse) {}
+	rpc Quit(QuitRequest) returns (Unit) {}
+	rpc Publish(PublishRequest) returns (Unit) {}
+}
+

@@ -1,0 +1,32 @@
+syntax = "proto3";
+package user;
+
+message ListChannelRequest {
+	string pattern = 1;
+}
+
+message ListChannelResponse {
+	repeated string channel = 1;
+}
+
+message EnterChannelRequest {
+	string channel = 1;
+}
+
+message EnterChannelResponse {
+	string ret = 1;
+}
+
+message QuitChannelRequest {
+	string channel = 1;
+}
+
+message QuitChannelResponse {
+	string ret = 1;
+}
+service User {
+	rpc ListChannel(ListChannelRequest) returns (ListChannelResponse) {}
+	rpc EnterChannel(EnterChannelRequest) returns (EnterChannelResponse) {}
+	rpc QuitChannel(QuitChannelRequest) returns (QuitChannelResponse) {}
+}
+
