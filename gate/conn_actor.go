@@ -15,7 +15,7 @@ type connActor struct {
 }
 
 func (c *connActor) Receive(ctx actor.Context) {
-	switch ev := ctx.Message().(type) {
+	switch m := ctx.Message().(type) {
 	case *actor.Started:
 		mnet.SendMsg(ctx, "connected")
 	case *actor.Stopping, *actor.Restarting:
@@ -31,24 +31,24 @@ func (c *connActor) Receive(ctx actor.Context) {
 	case *mnet.ConnectionEvent:
 		ctx.Self().Stop()
 	case string:
-		if ev != "" {
-			ret, e := cmdHandler.Handle(ev, ctx)
+		if m != "" {
+			ret, e := handler.Handle(m, ctx)
 			mnet.SendMsg(ctx, fmt.Sprintf("%v %v", ret, e))
 		}
-	case *user.ChannelEventNotify:
+	case *user.ChannelEventRequest:
 		var b bytes.Buffer
-		fmt.Fprint(&b, ev.Channel)
+		fmt.Fprint(&b, m.Channel)
 
-		if ev.Enter != "" {
-			fmt.Fprint(&b, " +", ev.Enter)
+		if m.Enter != "" {
+			fmt.Fprint(&b, " +", m.Enter)
 		}
 
-		if ev.Quit != "" {
-			fmt.Fprint(&b, " -", ev.Quit)
+		if m.Quit != "" {
+			fmt.Fprint(&b, " -", m.Quit)
 		}
 
-		if ev.Msg != "" || ev.User != "" {
-			fmt.Fprint(&b, " ", ev.User, ":", ev.Msg)
+		if m.Msg != "" || m.User != "" {
+			fmt.Fprint(&b, " ", m.User, ":", m.Msg)
 		}
 
 		mnet.SendMsg(ctx, b.String())

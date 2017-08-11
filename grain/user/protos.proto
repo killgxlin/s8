@@ -39,19 +39,10 @@ message QuitChannelRequest {
 	ChannelSelector selector = 1;
 }
 
-message FireChannelEventRequest {
+message NotifyChannelEventRequest {
 	ChannelSelector selector = 1;
 	string msg = 2;
 	string to_user = 3;
-}
-
-message ChannelEventNotify {
-	string channel = 1;
-	string user = 2;
-	string msg = 3;
-
-	string enter = 4;
-	string quit = 5;
 }
 
 message RegisterRequest {
@@ -63,13 +54,24 @@ message UnregisterRequest {
 	actor.PID pid = 1;
 }
 
+message ChannelEventRequest {
+	string channel = 1;
+	string user = 2;
+	string msg = 3;
+
+	string enter = 4;
+	string quit = 5;
+}
+
+
 service User {
 	rpc ListChannel(ListChannelRequest) returns (ListChannelResponse) {}
 	rpc EnterChannel(EnterChannelRequest) returns (EnterChannelResponse) {}
 	rpc QuitChannel(QuitChannelRequest) returns (Unit) {}
-	rpc FireChannelEvent(FireChannelEventRequest) returns (Unit) {}
-	rpc NotifyChannelEvent(ChannelEventNotify) returns (Unit) {}
+	rpc NotifyChannelEvent(NotifyChannelEventRequest) returns (Unit) {}
 	rpc Register(RegisterRequest)returns(Unit){}
 	rpc Unregister(UnregisterRequest)returns(Unit){}
+
+	rpc OnChannelEvent(ChannelEventRequest) returns (Unit) {}
 }
 

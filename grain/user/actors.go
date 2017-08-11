@@ -14,7 +14,7 @@ import (
 type user struct {
 	cluster.Grain
 	channels map[string]bool
-	connPID  *actor.PID
+	connpid  *actor.PID
 }
 
 func (u *user) Init(id string) {
@@ -67,10 +67,10 @@ func (u *user) QuitChannel(r *QuitChannelRequest) (res *Unit, e error) {
 	return
 }
 
-func (u *user) FireChannelEvent(r *FireChannelEventRequest) (res *Unit, e error) {
+func (u *user) NotifyChannelEvent(r *NotifyChannelEventRequest) (res *Unit, e error) {
 	for _, chnn := range r.Selector.Channel {
 		g := channel.GetChannelGrain(chnn)
-		_, e = g.Publish(&channel.PublishRequest{User: u.ID(), Msg: r.Msg, ToUser: r.ToUser})
+		_, e = g.Notify(&channel.NotifyRequest{User: u.ID(), Msg: r.Msg, ToUser: r.ToUser})
 		if e != nil {
 			delete(u.channels, chnn)
 		}
@@ -79,38 +79,38 @@ func (u *user) FireChannelEvent(r *FireChannelEventRequest) (res *Unit, e error)
 	return
 }
 
-func (u *user) NotifyChannelEvent(r *ChannelEventNotify) (res *Unit, e error) {
-	if u.connPID != nil {
-		u.connPID.Tell(r)
+func (u *user) OnChannelEvent(r *ChannelEventRequest) (res *Unit, e error) {
+	if u.connpid != nil {
+		u.connpid.Tell(r)
 	}
 	return
 }
 
 func (u *user) Register(r *RegisterRequest) (res *Unit, e error) {
-	if u.connPID != nil {
+	if u.connpid != nil {
 		e = fmt.Errorf("%v already registerred", u.ID())
 		return
 	}
-	u.connPID = r.Pid
+	u.connpid = r.Pid
 	log.Println(*u)
 	return
 }
 
 func (u *user) Unregister(r *UnregisterRequest) (res *Unit, e error) {
-	if u.connPID == nil || !u.connPID.Equal(r.Pid) {
+	if u.connpid == nil || !u.connpid.Equal(r.Pid) {
 		e = fmt.Errorf("%v need not unregister", u.ID())
 		return
 	}
 
-	u.connPID = nil
+	u.connpid = nil
 	log.Println(*u)
 	return
 }
 
 func init() {
-	channel.RegisterObserver(func(touser, channel, user, msg, enter, quit string) {
+	channel.RegisterEventHandler(func(touser, channel, user, msg, enter, quit string) {
 		g := GetUserGrain(touser)
-		go g.NotifyChannelEvent(&ChannelEventNotify{
+		go g.OnChannelEvent(&ChannelEventRequest{
 			Channel: channel,
 			User:    user,
 			Msg:     msg,

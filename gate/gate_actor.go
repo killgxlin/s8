@@ -18,20 +18,20 @@ type gateActor struct {
 }
 
 func (g *gateActor) Receive(ctx actor.Context) {
-	switch ev := ctx.Message().(type) {
+	switch m := ctx.Message().(type) {
 	case *actor.Started:
 	case *mnet.AcceptorEvent:
-		if ev.E != nil {
+		if m.E != nil {
 			ctx.Self().Stop()
 			return
 		}
-		log.Printf("gate port:%v", ev.GetPort())
-		if ev.C != nil {
-			prop := actor.FromInstance(&connActor{}).WithMiddleware(
+		log.Printf("gate port:%v", m.GetPort())
+		if m.C != nil {
+			p := actor.FromInstance(&connActor{}).WithMiddleware(
 				msglogger.MsgLogger,
-				mnet.MakeConnection(ev.C, msgio, true, true, 60*60*24),
+				mnet.MakeConnection(m.C, msgio, true, true, 60*60*24),
 			)
-			ctx.SpawnPrefix(prop, "conn")
+			ctx.SpawnPrefix(p, "conn")
 		}
 	}
 }

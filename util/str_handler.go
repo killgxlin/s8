@@ -16,6 +16,14 @@ type CmdHandler struct {
 	handles map[string]Handler
 }
 
+func (ch *CmdHandler) AllCommand() []string {
+	var cmds []string
+	for cmd := range ch.handles {
+		cmds = append(cmds, cmd)
+	}
+	return cmds
+}
+
 func (ch *CmdHandler) Register(typ string, h Handler) {
 	if _, ok := ch.handles[typ]; ok {
 		log.Panic(typ, "exist")

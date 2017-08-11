@@ -21,9 +21,9 @@ func main() {
 	flag.Parse()
 
 	// consul
-	cp, err := consul.New()
-	if err != nil {
-		log.Fatal(err)
+	cp, e := consul.New()
+	if e != nil {
+		log.Fatal(e)
 	}
 	defer cp.Shutdown()
 

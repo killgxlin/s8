@@ -46,7 +46,7 @@ func (c *channel) Enter(r *EnterRequest) (res *EnterResponse, e error) {
 
 	if !ok {
 		for user := range c.members {
-			Publish(user, c.ID(), "", "", r.User, "")
+			OnEvent(user, c.ID(), "", "", r.User, "")
 		}
 	}
 
@@ -66,7 +66,7 @@ func (c *channel) Quit(r *QuitRequest) (res *Unit, e error) {
 	if ok {
 		delete(c.members, r.User)
 		for user := range c.members {
-			Publish(user, c.ID(), "", "", "", r.User)
+			OnEvent(user, c.ID(), "", "", "", r.User)
 		}
 	}
 
@@ -74,17 +74,17 @@ func (c *channel) Quit(r *QuitRequest) (res *Unit, e error) {
 	return
 }
 
-func (c *channel) Publish(r *PublishRequest) (res *Unit, e error) {
+func (c *channel) Notify(r *NotifyRequest) (res *Unit, e error) {
 	if _, ok := c.members[r.User]; !ok {
 		e = fmt.Errorf("%v not member of %v", r.User, c.ID())
 		return
 	}
 
 	if _, ok := c.members[r.ToUser]; ok {
-		Publish(r.ToUser, c.ID(), r.User, r.Msg, "", "")
+		OnEvent(r.ToUser, c.ID(), r.User, r.Msg, "", "")
 	} else {
 		for user := range c.members {
-			Publish(user, c.ID(), r.User, r.Msg, "", "")
+			OnEvent(user, c.ID(), r.User, r.Msg, "", "")
 		}
 	}
 

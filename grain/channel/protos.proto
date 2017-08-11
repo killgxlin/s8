@@ -16,7 +16,7 @@ message QuitRequest {
 	string user = 1;
 }
 
-message PublishRequest {
+message NotifyRequest {
 	string user = 1;
 	string msg = 2;
 	string to_user = 3;
@@ -26,6 +26,6 @@ message PublishRequest {
 service Channel {
 	rpc Enter(EnterRequest) returns (EnterResponse) {}
 	rpc Quit(QuitRequest) returns (Unit) {}
-	rpc Publish(PublishRequest) returns (Unit) {}
+	rpc Notify(NotifyRequest) returns (Unit) {}
 }
 

@@ -14,11 +14,11 @@ import (
 
 // handler --------------------------------------------------
 var (
-	cmdHandler = util.NewCmdHandler()
+	handler = util.NewCmdHandler()
 )
 
 func init() {
-	cmdHandler.Register("echo", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
+	handler.Register("echo", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
 		msg := fs.String("m", "", "message for echo")
 		e := fs.Parse(args)
 		if e != nil {
@@ -28,7 +28,7 @@ func init() {
 
 		fmt.Fprintln(out, *msg)
 	})
-	cmdHandler.Register("name", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
+	handler.Register("name", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
 		ctx1 := ctx.(actor.Context)
 		ca := ctx1.Actor().(*connActor)
 
@@ -66,8 +66,8 @@ func init() {
 
 		fmt.Fprintln(out, "ok")
 	})
-	cmdHandler.Register("allch", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
-		pattern := fs.String("p", "*", "pattern")
+	handler.Register("allch", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
+		patt := fs.String("p", "*", "pattern")
 		e := fs.Parse(args)
 		if e != nil {
 			fmt.Fprintln(out, e)
@@ -75,7 +75,7 @@ func init() {
 		}
 
 		g := registry.GetRegistryGrain("registry")
-		r, e := g.List(&registry.ListRequest{Pattern: *pattern})
+		r, e := g.List(&registry.ListRequest{Pattern: *patt})
 		if e != nil {
 			fmt.Fprintln(out, e)
 			return
@@ -83,8 +83,8 @@ func init() {
 
 		fmt.Fprintln(out, strings.Join(r.Channel, ","))
 	})
-	cmdHandler.Register("mych", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
-		pattern := fs.String("p", "*", "pattern")
+	handler.Register("mych", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
+		patt := fs.String("p", "*", "pattern")
 		e := fs.Parse(args)
 		if e != nil {
 			fmt.Fprintln(out, e)
@@ -94,7 +94,7 @@ func init() {
 		ctx1 := ctx.(actor.Context)
 		ca := ctx1.Actor().(*connActor)
 		u := user.GetUserGrain(ca.name)
-		r, e := u.ListChannel(&user.ListChannelRequest{Pattern: *pattern})
+		r, e := u.ListChannel(&user.ListChannelRequest{Pattern: *patt})
 		if e != nil {
 			fmt.Fprintln(out, e)
 			return
@@ -102,22 +102,22 @@ func init() {
 
 		fmt.Fprintln(out, strings.Join(r.Channel, ","))
 	})
-	cmdHandler.Register("enter", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
+	handler.Register("enter", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
 		ch := fs.String("c", "", "channel")
-		pattern := fs.String("p", "", "pattern")
+		patt := fs.String("p", "", "pattern")
 		e := fs.Parse(args)
 		if e != nil {
 			fmt.Fprintln(out, e)
 			return
 		}
 
-		if *ch == "" && *pattern == "" {
+		if *ch == "" && *patt == "" {
 			fmt.Fprintln(out, "empty channel or pattern")
 			return
 		}
 
 		chs := strings.Split(*ch, ",")
-		selector := &user.ChannelSelector{Channel: chs, Pattern: *pattern}
+		selector := &user.ChannelSelector{Channel: chs, Pattern: *patt}
 
 		ctx1 := ctx.(actor.Context)
 		ca := ctx1.Actor().(*connActor)
@@ -137,22 +137,22 @@ func init() {
 		}
 		fmt.Fprintln(out)
 	})
-	cmdHandler.Register("quit", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
+	handler.Register("quit", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
 		ch := fs.String("c", "", "channel")
-		pattern := fs.String("p", "", "pattern")
+		patt := fs.String("p", "", "pattern")
 		e := fs.Parse(args)
 		if e != nil {
 			fmt.Fprintln(out, e)
 			return
 		}
 
-		if *ch == "" && *pattern == "" {
+		if *ch == "" && *patt == "" {
 			fmt.Fprintln(out, "empty channel or pattern")
 			return
 		}
 
 		chs := strings.Split(*ch, ",")
-		selector := &user.ChannelSelector{Channel: chs, Pattern: *pattern}
+		selector := &user.ChannelSelector{Channel: chs, Pattern: *patt}
 
 		ctx1 := ctx.(actor.Context)
 		ca := ctx1.Actor().(*connActor)
@@ -166,9 +166,9 @@ func init() {
 
 		fmt.Fprintln(out, *ch, "ok")
 	})
-	cmdHandler.Register("notify", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
+	handler.Register("notify", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
 		ch := fs.String("c", "", "channel")
-		pattern := fs.String("p", "", "pattern")
+		patt := fs.String("p", "", "pattern")
 		msg := fs.String("m", "", "message")
 		touser := fs.String("u", "", "to which user")
 		e := fs.Parse(args)
@@ -177,7 +177,7 @@ func init() {
 			return
 		}
 
-		if *ch == "" && *pattern == "" {
+		if *ch == "" && *patt == "" {
 			fmt.Fprintln(out, "empty channel or pattern")
 			return
 		}
@@ -188,13 +188,19 @@ func init() {
 		}
 
 		chs := strings.Split(*ch, ",")
-		selector := &user.ChannelSelector{Channel: chs, Pattern: *pattern}
+		selector := &user.ChannelSelector{Channel: chs, Pattern: *patt}
 
 		ctx1 := ctx.(actor.Context)
 		ca := ctx1.Actor().(*connActor)
 		u := user.GetUserGrain(ca.name)
 
-		_, e = u.FireChannelEvent(&user.FireChannelEventRequest{Selector: selector, Msg: *msg, ToUser: *touser})
+		_, e = u.NotifyChannelEvent(&user.NotifyChannelEventRequest{Selector: selector, Msg: *msg, ToUser: *touser})
 		fmt.Fprintln(out, chs, e)
+	})
+	handler.Register("help", func(args []string, fs *flag.FlagSet, out io.Writer, ctx interface{}) {
+		cmds := handler.AllCommand()
+		for _, cmd := range cmds {
+			fmt.Fprintln(out, cmd)
+		}
 	})
 }

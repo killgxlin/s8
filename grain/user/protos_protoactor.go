@@ -36,13 +36,13 @@ type User interface {
 		
 	QuitChannel(*QuitChannelRequest) (*Unit, error)
 		
-	FireChannelEvent(*FireChannelEventRequest) (*Unit, error)
-		
-	NotifyChannelEvent(*ChannelEventNotify) (*Unit, error)
+	NotifyChannelEvent(*NotifyChannelEventRequest) (*Unit, error)
 		
 	Register(*RegisterRequest) (*Unit, error)
 		
 	Unregister(*UnregisterRequest) (*Unit, error)
+		
+	OnChannelEvent(*ChannelEventRequest) (*Unit, error)
 		
 }
 type UserGrain struct {
@@ -224,65 +224,7 @@ func (g *UserGrain) QuitChannelChan(r *QuitChannelRequest, options ...cluster.Gr
 	return c, e
 }
 	
-func (g *UserGrain) FireChannelEvent(r *FireChannelEventRequest, options ...cluster.GrainCallOption) (*Unit, error) {
-	conf := cluster.ApplyGrainCallOptions(options)
-	fun := func() (*Unit, error) {
-			pid, err := cluster.Get(g.ID, "User")
-			if err != nil {
-				return nil, err
-			}
-			bytes, err := proto.Marshal(r)
-			if err != nil {
-				return nil, err
-			}
-			request := &cluster.GrainRequest{Method: "FireChannelEvent", MessageData: bytes}
-			response, err := pid.RequestFuture(request, conf.Timeout).Result()
-			if err != nil {
-				return nil, err
-			}
-			switch msg := response.(type) {
-			case *cluster.GrainResponse:
-				result := &Unit{}
-				err = proto.Unmarshal(msg.MessageData, result)
-				if err != nil {
-					return nil, err
-				}
-				return result, nil
-			case *cluster.GrainErrorResponse:
-				return nil, errors.New(msg.Err)
-			default:
-				return nil, errors.New("Unknown response")
-			}
-		}
-	
-	var res *Unit
-	var err error
-	for i := 0; i < conf.RetryCount; i++ {
-		res, err = fun()
-		if err == nil {
-			return res, nil
-		}
-	}
-	return nil, err
-}
-
-func (g *UserGrain) FireChannelEventChan(r *FireChannelEventRequest, options ...cluster.GrainCallOption) (<-chan *Unit, <-chan error) {
-	c := make(chan *Unit)
-	e := make(chan error)
-	go func() {
-		res, err := g.FireChannelEvent(r, options...)
-		if err != nil {
-			e <- err
-		} else {
-			c <- res
-		}
-		close(c)
-		close(e)
-	}()
-	return c, e
-}
-	
-func (g *UserGrain) NotifyChannelEvent(r *ChannelEventNotify, options ...cluster.GrainCallOption) (*Unit, error) {
+func (g *UserGrain) NotifyChannelEvent(r *NotifyChannelEventRequest, options ...cluster.GrainCallOption) (*Unit, error) {
 	conf := cluster.ApplyGrainCallOptions(options)
 	fun := func() (*Unit, error) {
 			pid, err := cluster.Get(g.ID, "User")
@@ -324,7 +266,7 @@ func (g *UserGrain) NotifyChannelEvent(r *ChannelEventNotify, options ...cluster
 	return nil, err
 }
 
-func (g *UserGrain) NotifyChannelEventChan(r *ChannelEventNotify, options ...cluster.GrainCallOption) (<-chan *Unit, <-chan error) {
+func (g *UserGrain) NotifyChannelEventChan(r *NotifyChannelEventRequest, options ...cluster.GrainCallOption) (<-chan *Unit, <-chan error) {
 	c := make(chan *Unit)
 	e := make(chan error)
 	go func() {
@@ -456,6 +398,64 @@ func (g *UserGrain) UnregisterChan(r *UnregisterRequest, options ...cluster.Grai
 	return c, e
 }
 	
+func (g *UserGrain) OnChannelEvent(r *ChannelEventRequest, options ...cluster.GrainCallOption) (*Unit, error) {
+	conf := cluster.ApplyGrainCallOptions(options)
+	fun := func() (*Unit, error) {
+			pid, err := cluster.Get(g.ID, "User")
+			if err != nil {
+				return nil, err
+			}
+			bytes, err := proto.Marshal(r)
+			if err != nil {
+				return nil, err
+			}
+			request := &cluster.GrainRequest{Method: "OnChannelEvent", MessageData: bytes}
+			response, err := pid.RequestFuture(request, conf.Timeout).Result()
+			if err != nil {
+				return nil, err
+			}
+			switch msg := response.(type) {
+			case *cluster.GrainResponse:
+				result := &Unit{}
+				err = proto.Unmarshal(msg.MessageData, result)
+				if err != nil {
+					return nil, err
+				}
+				return result, nil
+			case *cluster.GrainErrorResponse:
+				return nil, errors.New(msg.Err)
+			default:
+				return nil, errors.New("Unknown response")
+			}
+		}
+	
+	var res *Unit
+	var err error
+	for i := 0; i < conf.RetryCount; i++ {
+		res, err = fun()
+		if err == nil {
+			return res, nil
+		}
+	}
+	return nil, err
+}
+
+func (g *UserGrain) OnChannelEventChan(r *ChannelEventRequest, options ...cluster.GrainCallOption) (<-chan *Unit, <-chan error) {
+	c := make(chan *Unit)
+	e := make(chan error)
+	go func() {
+		res, err := g.OnChannelEvent(r, options...)
+		if err != nil {
+			e <- err
+		} else {
+			c <- res
+		}
+		close(c)
+		close(e)
+	}()
+	return c, e
+}
+	
 
 type UserActor struct {
 	inner User
@@ -527,27 +527,8 @@ func (a *UserActor) Receive(ctx actor.Context) {
 				ctx.Respond(resp)
 			}
 			
-		case "FireChannelEvent":
-			req := &FireChannelEventRequest{}
-			err := proto.Unmarshal(msg.MessageData, req)
-			if err != nil {
-				log.Fatalf("[GRAIN] proto.Unmarshal failed %v", err)
-			}
-			r0, err := a.inner.FireChannelEvent(req)
-			if err == nil {
-				bytes, err := proto.Marshal(r0)
-				if err != nil {
-					log.Fatalf("[GRAIN] proto.Marshal failed %v", err)
-				}
-				resp := &cluster.GrainResponse{MessageData: bytes}
-				ctx.Respond(resp)
-			} else {
-				resp := &cluster.GrainErrorResponse{Err: err.Error()}
-				ctx.Respond(resp)
-			}
-			
 		case "NotifyChannelEvent":
-			req := &ChannelEventNotify{}
+			req := &NotifyChannelEventRequest{}
 			err := proto.Unmarshal(msg.MessageData, req)
 			if err != nil {
 				log.Fatalf("[GRAIN] proto.Unmarshal failed %v", err)
@@ -602,6 +583,25 @@ func (a *UserActor) Receive(ctx actor.Context) {
 				resp := &cluster.GrainErrorResponse{Err: err.Error()}
 				ctx.Respond(resp)
 			}
+			
+		case "OnChannelEvent":
+			req := &ChannelEventRequest{}
+			err := proto.Unmarshal(msg.MessageData, req)
+			if err != nil {
+				log.Fatalf("[GRAIN] proto.Unmarshal failed %v", err)
+			}
+			r0, err := a.inner.OnChannelEvent(req)
+			if err == nil {
+				bytes, err := proto.Marshal(r0)
+				if err != nil {
+					log.Fatalf("[GRAIN] proto.Marshal failed %v", err)
+				}
+				resp := &cluster.GrainResponse{MessageData: bytes}
+				ctx.Respond(resp)
+			} else {
+				resp := &cluster.GrainErrorResponse{Err: err.Error()}
+				ctx.Respond(resp)
+			}
 		
 		}
 	default:
@@ -638,11 +638,7 @@ func init() {
 // 	return &Unit{}, nil
 // }
 
-// func (*user) FireChannelEvent(r *FireChannelEventRequest) (*Unit, error) {
-// 	return &Unit{}, nil
-// }
-
-// func (*user) NotifyChannelEvent(r *ChannelEventNotify) (*Unit, error) {
+// func (*user) NotifyChannelEvent(r *NotifyChannelEventRequest) (*Unit, error) {
 // 	return &Unit{}, nil
 // }
 
@@ -651,6 +647,10 @@ func init() {
 // }
 
 // func (*user) Unregister(r *UnregisterRequest) (*Unit, error) {
+// 	return &Unit{}, nil
+// }
+
+// func (*user) OnChannelEvent(r *ChannelEventRequest) (*Unit, error) {
 // 	return &Unit{}, nil
 // }
 
