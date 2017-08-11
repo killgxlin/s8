@@ -5,6 +5,7 @@ import (
 	"log"
 	"path"
 	"s8/grain/channel"
+	"s8/util"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/AsynkronIT/protoactor-go/cluster"
@@ -57,23 +58,42 @@ func (u *user) EnterChannel(r *EnterChannelRequest) (res *EnterChannelResponse, 
 }
 
 func (u *user) QuitChannel(r *QuitChannelRequest) (res *Unit, e error) {
-	for _, chnn := range r.Selector.Channel {
+	quit := func(chnn string) {
 		g := channel.GetChannelGrain(chnn)
 		_, e = g.Quit(&channel.QuitRequest{User: u.ID()})
 		if e == nil {
 			delete(u.channels, chnn)
 		}
 	}
+	toquit := util.SelectMap(u.channels, r.Selector.Pattern)
+	for _, chnn := range r.Selector.Channel {
+		if _, ok := u.channels[chnn]; ok {
+			toquit[chnn] = true
+		}
+	}
+	for chnn := range toquit {
+		quit(chnn)
+	}
+
 	return
 }
 
 func (u *user) NotifyChannelEvent(r *NotifyChannelEventRequest) (res *Unit, e error) {
-	for _, chnn := range r.Selector.Channel {
+	notify := func(chnn string) {
 		g := channel.GetChannelGrain(chnn)
 		_, e = g.Notify(&channel.NotifyRequest{User: u.ID(), Msg: r.Msg, ToUser: r.ToUser})
 		if e != nil {
 			delete(u.channels, chnn)
 		}
+	}
+	tonotify := util.SelectMap(u.channels, r.Selector.Pattern)
+	for _, chnn := range r.Selector.Channel {
+		if _, ok := u.channels[chnn]; ok {
+			tonotify[chnn] = true
+		}
+	}
+	for chnn := range tonotify {
+		notify(chnn)
 	}
 
 	return
