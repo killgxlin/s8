@@ -1,0 +1,40 @@
+// name
+cname NAME
+sname NAME ERR
+
+// user list channel
+culch [PATTERN]
+sulch CHANNEL,CHANNEL,CHANNEL ERR
+
+// registry list channel
+cglch [PATTERN]
+sglch CHANNEL,CHANNEL,CHANNEL ERR
+
+// channel enter
+cchen CHANNEL
+schen CHANNEL MEMBER,MEMBER,MEMBER ERR
+
+// channel quit
+cchqu CHANNEL
+schqu CHANNEL ERR
+
+// channel event
+schevtntf CHANNEL (+MEMBER|-MEMBER)
+
+// channel msg
+cchmsg CHANNEL CONTENT [TONAME]
+schmsg CHANNEL ERR
+
+schmsgntf CHANNEL FROMUSER: [*]CONTENT 
+
+// channel list member
+cchlm CHANNEL 
+schlm CHANNEL [(MEMBER,)*MEMBER] ERR
+
+
+node
+	user_gate
+	user
+	registry
+	channel
+	channel_gate
