@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 	"s7/share/net"
-	"s8/gate"
+	"s8/actor/gate"
 
 	console "github.com/AsynkronIT/goconsole"
 	"github.com/AsynkronIT/protoactor-go/cluster"
