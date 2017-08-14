@@ -36,8 +36,8 @@ func (g *gateActor) Receive(ctx actor.Context) {
 	}
 }
 
-func StartGate(start, end int) {
-	addr, e := net.FindLanAddr(start, end)
+func Start(start, end int) {
+	addr, e := net.FindLanAddr("tcp", start, end)
 	if e != nil {
 		log.Panic(e)
 	}

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"s7/share/net"
+	"s8/actor/changate"
 	"s8/actor/gate"
 
 	console "github.com/AsynkronIT/goconsole"
@@ -28,14 +29,16 @@ func main() {
 	defer cp.Shutdown()
 
 	// cluster
-	addr, e := net.FindLanAddr(*cport, *cport+1000)
+	addr, e := net.FindLanAddr("tcp", *cport, *cport+1000)
 	if e != nil {
 		log.Panic(e)
 	}
 	cluster.Start("mycluster", addr, cp)
 
 	// gate
-	gate.StartGate(*gport, *gport+1000)
+	gate.Start(*gport, *gport+1000)
+	// channel gate
+	changate.Start(*gport, *gport+1000)
 
 	console.ReadLine()
 }

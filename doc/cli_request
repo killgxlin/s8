@@ -1,40 +1,66 @@
-// name
-cname NAME
-sname NAME ERR
+protocol
+	tcp:
+		allch
+		mych
+		enter
+	udp:
+		c:|auth token
+		s:|ok
 
-// user list channel
-culch [PATTERN]
-sulch CHANNEL,CHANNEL,CHANNEL ERR
-
-// registry list channel
-cglch [PATTERN]
-sglch CHANNEL,CHANNEL,CHANNEL ERR
-
-// channel enter
-cchen CHANNEL
-schen CHANNEL MEMBER,MEMBER,MEMBER ERR
-
-// channel quit
-cchqu CHANNEL
-schqu CHANNEL ERR
-
-// channel event
-schevtntf CHANNEL (+MEMBER|-MEMBER)
-
-// channel msg
-cchmsg CHANNEL CONTENT [TONAME]
-schmsg CHANNEL ERR
-
-schmsgntf CHANNEL FROMUSER: [*]CONTENT 
-
-// channel list member
-cchlm CHANNEL 
-schlm CHANNEL [(MEMBER,)*MEMBER] ERR
+		c:hello world |private
 
 
-node
-	user_gate
-	user
-	registry
-	channel
-	channel_gate
+		s:|added [name:status]
+		s:|updated [name:status]
+		s:|removed [name:status]
+		s:|members [name:status,name:status...]
+	
+
+cpu -----------------------------
+tcp addr
+	c:!allch
+	s:!ok [cpubus]
+
+	c:!chan enter cpubus
+	s:!ok [cpubus:udp-addr:token]
+
+	c:!chan list
+	s:!ok [cpubus:udp-addr:token,boardbus:udp-addr:token]
+
+	c:!chan refresh cpubus
+	s:!ok [cpubus:udp-addr:token]
+
+udp addr
+	c:|auth token
+	s:|ok
+	s:|members [mem:online,graph:online]
+
+	c:hello|notify 
+	c:hello mem, this is private|notify -u mem
+
+	disconnected and connect
+
+	c:|auth token
+	s:|ok
+	s:|members [mem:online,graph:online]
+
+	c:|quit
+	s:|ok
+
+
+mem -----------------------------
+tcp addr
+	...
+	c:!quit -c cpubus
+	s:!ok
+	...
+udp addr
+	...
+	s:|added cpu:offline
+	s:|updated cpu:online
+	s:[cpu]hello 
+	s:[cpu.p]hello mem, this is private 
+	s:|updated cpu:offline
+	s:|updated cpu:online
+	s:|removed cpu:offline
+
