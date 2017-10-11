@@ -40,5 +40,10 @@ func main() {
 	// channel gate
 	changate.Start(*gport, *gport+1000)
 
-	console.ReadLine()
+	for {
+		_, e := console.ReadLine()
+		if e != nil {
+			break
+		}
+	}
 }
