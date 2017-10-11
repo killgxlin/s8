@@ -29,7 +29,7 @@ func (g *gateActor) Receive(ctx actor.Context) {
 		if m.C != nil {
 			p := actor.FromInstance(&connActor{}).WithMiddleware(
 				msglogger.MsgLogger,
-				mnet.MakeConnection(ev.C, msgio, true, true, -1),
+				mnet.MakeConnection(m.C, msgio, true, true, -1),
 			)
 			ctx.SpawnPrefix(p, "conn")
 		}
