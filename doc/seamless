@@ -1,0 +1,41 @@
+--move--------------
+movedata
+	int id
+	Vector3 pos
+	Vector3 vel
+cmove movedata
+supdate movedata
+
+--map--------------
+c[connected]
+senter movedata
+c[disconnect]
+sadd movedata*
+sremove movedata*
+supdate movedata
+
+server
+	players
+	net
+		onconnected
+			players.add
+		ondisconnected
+			players.remove
+		onmove
+			p = players.get(id)
+			p.move
+			players.notify(move)
+		update
+			foreach (p in players) {
+				p.update()
+			}
+
+client
+	players
+	net
+		onconnected
+		ondisconnected
+		onsenter
+		onsadd
+		onsremove
+		onsupdate

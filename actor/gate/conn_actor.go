@@ -3,7 +3,7 @@ package gate
 import (
 	"bytes"
 	fmt "fmt"
-	"s7/share/middleware/mnet"
+	"myutil/actor/plugin/net"
 	"s8/grain/user"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
@@ -17,7 +17,7 @@ type connActor struct {
 func (c *connActor) Receive(ctx actor.Context) {
 	switch m := ctx.Message().(type) {
 	case *actor.Started:
-		mnet.SendMsg(ctx, "connected")
+		net.SendMsg(ctx, "connected")
 	case *actor.Stopping, *actor.Restarting:
 		if c.name != "" {
 			u := user.GetUserGrain(c.name)
@@ -28,12 +28,12 @@ func (c *connActor) Receive(ctx actor.Context) {
 			c.name = ""
 		}
 
-	case *mnet.ConnectionEvent:
+	case *net.ConnectionEvent:
 		ctx.Self().Stop()
 	case string:
 		if m != "" {
 			ret, e := handler.Handle(m, ctx)
-			mnet.SendMsg(ctx, fmt.Sprintf("%v %v", ret, e))
+			net.SendMsg(ctx, fmt.Sprintf("%v %v", ret, e))
 		}
 	case *user.ChannelEventRequest:
 		var b bytes.Buffer
@@ -51,6 +51,6 @@ func (c *connActor) Receive(ctx actor.Context) {
 			fmt.Fprint(&b, " ", m.User, ":", m.Msg)
 		}
 
-		mnet.SendMsg(ctx, b.String())
+		net.SendMsg(ctx, b.String())
 	}
 }

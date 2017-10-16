@@ -2,16 +2,16 @@ package gate
 
 import (
 	"log"
-	"s7/share/middleware/mnet"
-	"s7/share/middleware/msglogger"
-	"s7/share/net"
-	cstring "s7/share/net/coder/string"
+	"myutil/actor/plugin/logger"
+	anet "myutil/actor/plugin/net"
+	"myutil/base/net/coder/string"
+	"myutil/base/net/util"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
 )
 
 var (
-	msgio = cstring.NewReadWriter()
+	msgio = string.NewReadWriter()
 )
 
 type gateActor struct {
@@ -20,7 +20,7 @@ type gateActor struct {
 func (g *gateActor) Receive(ctx actor.Context) {
 	switch m := ctx.Message().(type) {
 	case *actor.Started:
-	case *mnet.AcceptorEvent:
+	case *anet.AcceptorEvent:
 		if m.E != nil {
 			ctx.Self().Stop()
 			return
@@ -28,8 +28,8 @@ func (g *gateActor) Receive(ctx actor.Context) {
 		log.Printf("gate port:%v", m.GetPort())
 		if m.C != nil {
 			p := actor.FromInstance(&connActor{}).WithMiddleware(
-				msglogger.MsgLogger,
-				mnet.MakeConnection(m.C, msgio, true, true, 60*60*24),
+				logger.MsgLogger,
+				anet.MakeConnection(m.C, msgio, true, true, 60*60*24),
 			)
 			ctx.SpawnPrefix(p, "conn")
 		}
@@ -37,7 +37,7 @@ func (g *gateActor) Receive(ctx actor.Context) {
 }
 
 func StartGate(start, end int) {
-	addr, e := net.FindLanAddr("tcp", start, end)
+	addr, e := util.FindLanAddr("tcp", start, end)
 	if e != nil {
 		log.Panic(e)
 	}
@@ -45,8 +45,8 @@ func StartGate(start, end int) {
 	prop := actor.FromProducer(func() actor.Actor {
 		return &gateActor{}
 	}).WithMiddleware(
-		msglogger.MsgLogger,
-		mnet.MakeAcceptor(addr, 100, 100),
+		logger.MsgLogger,
+		anet.MakeAcceptor(addr, 100, 100),
 	)
 	_, e = actor.SpawnNamed(prop, "gate")
 	if e != nil {

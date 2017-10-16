@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"log"
-	"s7/share/net"
+	"myutil/base/net/util"
 	"s8/actor/gate"
 
 	console "github.com/AsynkronIT/goconsole"
@@ -28,7 +28,7 @@ func main() {
 	defer cp.Shutdown()
 
 	// cluster
-	addr, e := net.FindLanAddr(*cport, *cport+1000)
+	addr, e := util.FindLanAddr("tcp", *cport, *cport+1000)
 	if e != nil {
 		log.Panic(e)
 	}
