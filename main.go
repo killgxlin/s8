@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
+	"gamelib/base/net/util"
 	"log"
-	"s7/share/net"
 	"s8/actor/changate"
 	"s8/actor/gate"
 
@@ -29,14 +29,14 @@ func main() {
 	defer cp.Shutdown()
 
 	// cluster
-	addr, e := net.FindLanAddr("tcp", *cport, *cport+1000)
+	addr, e := util.FindLanAddr("tcp", *cport, *cport+1000)
 	if e != nil {
 		log.Panic(e)
 	}
 	cluster.Start("mycluster", addr, cp)
 
 	// gate
-	gate.Start(*gport, *gport+1000)
+	gate.StartGate(*gport, *gport+1000)
 	// channel gate
 	changate.Start(*gport, *gport+1000)
 
